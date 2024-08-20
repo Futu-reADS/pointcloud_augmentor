@@ -1,0 +1,9 @@
+/**:
+  ros__parameters:
+    direction:
+      x:  0.0
+      y:  0.0
+      z: -1.0
+    length: 1.0
+    offset: 0.0
+    pitch: 0.05
