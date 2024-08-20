@@ -25,10 +25,11 @@ See `config/params.yaml` as an example.
     pitch: 0.05
 ~~~~
 
-- `direction`: specify the direction along which points should be copied. Preferably specify a unit vector. Specifying all 0 means no copying operation will be done.
+- `direction`: Specify the direction vector along which points should be copied. Preferably specify a unit vector. Specifying all 0 means no copying operation will be done. The vector is interpreted in frame of the incoming point cloud.  
 - `pitch`: Pitch of copying operation (unit: m)
 - `offset`: Offset from which copying operation starts (unit: m)
 - `length`: Length up to which copying operation will be done (unit: m)
+
 
 
 ## Example
@@ -41,11 +42,11 @@ For a quick testing, execute:
 
 ### Result
 
-#### Original point cloud
+#### Original point cloud seen in rviz2
 
 ![Original](image/original_2dlidar_points.png)
 
-#### Augmented point cloud
+#### Augmented point cloud seen in rviz2
 
 ![Augmented](image/augmented_2dlidar_points.png)
 
