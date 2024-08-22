@@ -1,7 +1,8 @@
 <launch>
   <arg name="config" default="$(find-pkg-share pointcloud_augmentor)/config/params.yaml" />
-  <node name="pointcloud_augmentor_node" pkg="pointcloud_augmentor" exec="pointcloud_augmentor_node" output="screen">
+  <node name="pointcloud_augmentor_node" pkg="pointcloud_augmentor" exec="pointcloud_augmentor_node" output="screen"> 
     <param from="$(var config)"/>
-    <remap from="pointcloud2_in" to="/sensing/lidar/front/pointcloud_raw_ex"/>
+    <remap from="pointcloud2_in" to="/sensing/lidar/front/pointcloud"/>
+    <remap from="pointcloud2_out" to="/sensing/lidar/front/augmented"/>
   </node>
 </launch>
