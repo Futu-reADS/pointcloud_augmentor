@@ -1,6 +1,0 @@
-<launch>
-  <arg name="config" default="$(find-pkg-share pointcloud_augmentor)/config/params.yaml" />
-  <node name="pointcloud_augmentor_node" pkg="pointcloud_augmentor" exec="pointcloud_augmentor_node">
-    <param from="$(var config)"/>
-  </node>
-</launch>

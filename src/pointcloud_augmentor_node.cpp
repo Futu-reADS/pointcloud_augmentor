@@ -13,7 +13,7 @@ class PointCloudAugmentorNode : public rclcpp::Node
 {
   public:
     PointCloudAugmentorNode() :
-    Node("pointcloud_augmentor_node_new") 
+    Node("pointcloud_augmentor_node") 
     {
       direction_x_ = declare_parameter<double>("direction.x", 0.0);
       direction_y_ = declare_parameter<double>("direction.y", 0.0);
