@@ -13,7 +13,8 @@ class PointCloudAugmentorNode : public rclcpp::Node
 {
   public:
     PointCloudAugmentorNode() :
-    Node("pointcloud_augmentor_node") 
+    Node("pointcloud_augmentor_node"),
+    clear_points_(false)
     {
       direction_x_ = declare_parameter<double>("direction.x", 0.0);
       direction_y_ = declare_parameter<double>("direction.y", 0.0);
@@ -33,20 +34,11 @@ class PointCloudAugmentorNode : public rclcpp::Node
       pitch_  = declare_parameter<double>("pitch", 0.0);
 
       no_push_back_ = declare_parameter<bool>("no_push_back", true);
+      clear_points_ = declare_parameter("clear_points", clear_points_);
 
       printf("direction_z:%lf length:%lf pitch:%lf offset:%lf\n", direction_z_, length_, pitch_, offset_);
 
-      augment_number_ = 0;
-      for (double offset=offset_; offset <= offset_ + length_; offset += pitch_) {
-        augment_number_++;
-      }
-      offset_vector_.resize(augment_number_);
-      for (size_t i=0; i < augment_number_; i++) {
-        offset_vector_[i].x = direction_x_*(offset_ + pitch_*i);
-        offset_vector_[i].y = direction_y_*(offset_ + pitch_*i);
-        offset_vector_[i].z = direction_z_*(offset_ + pitch_*i);
-      }
-      
+      update_offset_vector();
       rmw_qos_profile_t qos_profile = rmw_qos_profile_sensor_data;
       auto qos_pcl2 = rclcpp::QoS(rclcpp::QoSInitialization(qos_profile.history, 1), qos_profile);
 
@@ -61,8 +53,13 @@ class PointCloudAugmentorNode : public rclcpp::Node
           "pointcloud2_in", qos_pcl2,
           std::bind(&PointCloudAugmentorNode::callbackForPointcloud2NoPushBack, this, std::placeholders::_1));
       }
+
+      param_cb_ = add_on_set_parameters_callback(
+        std::bind(&PointCloudAugmentorNode::callbackOnParameterChange, this, std::placeholders::_1));
+
     }
 
+    // obsolete; use callbackForPointCloud2NoPushBack instead
     void callbackForPointcloud2(const sensor_msgs::msg::PointCloud2::SharedPtr _ptr_msg_in)
     {
       auto time_start = std::chrono::system_clock::now();
@@ -78,13 +75,15 @@ class PointCloudAugmentorNode : public rclcpp::Node
       // augment points along the specified direction
       size_t size_original = ptr_pcl_pointcloud->size();
       if (0 < pitch_) {
-        for (size_t i=0; i < size_original; i++) {
-          for (double offset=offset_; offset <= offset_ + length_; offset += pitch_) {
-            pcl::PointXYZI point(ptr_pcl_pointcloud->at(i));
-            point.x += direction_x_ * offset;
-            point.y += direction_y_ * offset;
-            point.z += direction_z_ * offset;
-            ptr_pcl_pointcloud->push_back(point);
+        if (!clear_points_) {
+          for (size_t i=0; i < size_original; i++) {
+            for (double offset=offset_; offset <= offset_ + length_; offset += pitch_) {
+              pcl::PointXYZI point(ptr_pcl_pointcloud->at(i));
+              point.x += direction_x_ * offset;
+              point.y += direction_y_ * offset;
+              point.z += direction_z_ * offset;
+              ptr_pcl_pointcloud->push_back(point);
+            }
           }
         }
       }
@@ -128,15 +127,19 @@ class PointCloudAugmentorNode : public rclcpp::Node
       if (0 < pitch_) {
         pcl::PointCloud<pcl::PointXYZI>::Ptr ptr_pcl_pointcloud_out(new pcl::PointCloud<pcl::PointXYZI>);
         pcl::PointXYZI point;
-        ptr_pcl_pointcloud_out->resize(size_original*augment_number_);
-        uint64_t k=0;
-        for (size_t i=0; i < size_original; i++) {
-          for (size_t j=0; j < augment_number_; j++) {
-            point = ptr_pcl_pointcloud->at(i);
-            point.x += offset_vector_[j].x;
-            point.y += offset_vector_[j].y;
-            point.z += offset_vector_[j].z; ///
-            ptr_pcl_pointcloud_out->at(k++) = point;
+        if (clear_points_) {
+          ptr_pcl_pointcloud_out->resize(0);
+        } else {
+          ptr_pcl_pointcloud_out->resize(size_original*augment_number_);
+          uint64_t k=0;
+          for (size_t i=0; i < size_original; i++) {
+            for (size_t j=0; j < augment_number_; j++) {
+              point = ptr_pcl_pointcloud->at(i);
+              point.x += offset_vector_[j].x;
+              point.y += offset_vector_[j].y;
+              point.z += offset_vector_[j].z; ///
+              ptr_pcl_pointcloud_out->at(k++) = point;
+            }
           }
         }
         // convert back to ros2 PointCloud2
@@ -166,12 +169,69 @@ class PointCloudAugmentorNode : public rclcpp::Node
       }
     }
 
+    // For dynamic reconfiguration of pointcloud_augmentor; you can modify augmentation parameters on the fly
+    rcl_interfaces::msg::SetParametersResult callbackOnParameterChange(
+      const std::vector<rclcpp::Parameter>& _params)
+    {
+      rcl_interfaces::msg::SetParametersResult result;
+      result.successful = true;
+
+      for (const rclcpp::Parameter & param : _params)
+      {
+        if (param.get_name() == "clear_points")
+        {
+          clear_points_ = param.get_value<bool>();
+        }
+        else if (param.get_name() == "length") {
+          length_ = param.get_value<double>();
+        }
+        else if (param.get_name() == "offset") {
+          offset_ = param.get_value<double>();
+        }
+        else if (param.get_name() == "pitch") {
+          pitch_ = param.get_value<double>();
+        }
+        else if (param.get_name() == "direction.x") {
+          direction_x_ = param.get_value<double>();
+        }
+        else if (param.get_name() == "direction.y") {
+          direction_y_ = param.get_value<double>();
+        }
+        else if (param.get_name() == "direction.z") {
+          direction_z_ = param.get_value<double>();
+        }
+      }
+      update_offset_vector();
+      return result;
+    }
+
+    void update_offset_vector()
+    {
+      if (pitch_ <= 0) {
+        return;
+      }
+      augment_number_ = 0;
+      for (double offset=offset_; offset <= offset_ + length_; offset += pitch_) {
+        augment_number_++;
+      }
+      offset_vector_.resize(augment_number_);
+      for (size_t i=0; i < augment_number_; i++) {
+        offset_vector_[i].x = direction_x_*(offset_ + pitch_*i);
+        offset_vector_[i].y = direction_y_*(offset_ + pitch_*i);
+        offset_vector_[i].z = direction_z_*(offset_ + pitch_*i);
+      }
+    }
+
+
   public:
     double direction_x_, direction_y_, direction_z_;
     double length_;
     double offset_;
     double pitch_;
     bool no_push_back_;
+    bool clear_points_;
+
+    rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr param_cb_;
 
     uint32_t augment_number_;
     std::vector<pcl::PointXYZ> offset_vector_;
