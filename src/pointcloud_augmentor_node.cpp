@@ -32,7 +32,8 @@ class PointCloudAugmentorNode : public rclcpp::Node
       length_ = declare_parameter<double>("length", 0.0);
       offset_ = declare_parameter<double>("offset", 0.0);
       pitch_  = declare_parameter<double>("pitch", 0.0);
-
+      horizontal_multiplier_ = 32;
+            
       no_push_back_ = declare_parameter<bool>("no_push_back", true);
       clear_points_ = declare_parameter("clear_points", clear_points_);
 
@@ -130,15 +131,22 @@ class PointCloudAugmentorNode : public rclcpp::Node
         if (clear_points_) {
           ptr_pcl_pointcloud_out->resize(0);
         } else {
-          ptr_pcl_pointcloud_out->resize(size_original*augment_number_);
+          ptr_pcl_pointcloud_out->resize(size_original*augment_number_*horizontal_multiplier_);
           uint64_t k=0;
           for (size_t i=0; i < size_original; i++) {
-            for (size_t j=0; j < augment_number_; j++) {
-              point = ptr_pcl_pointcloud->at(i);
-              point.x += offset_vector_[j].x;
-              point.y += offset_vector_[j].y;
-              point.z += offset_vector_[j].z; ///
-              ptr_pcl_pointcloud_out->at(k++) = point;
+            point = ptr_pcl_pointcloud->at(i);
+            //double norm = sqrt(point.y*point.y + point.x*point.x);
+            //double dx = -point.y/norm/256/horizontal_multiplier_;
+            //double dy =  point.x/norm/256/horizontal_multiplier_;
+            int kk_center = horizontal_multiplier_/2;
+            for (size_t kk=0; kk < horizontal_multiplier_; kk++) {
+              for (size_t j=0; j < augment_number_; j++) {
+                point = ptr_pcl_pointcloud->at(i);
+                point.x += offset_vector_[j].x + 0.005*(kk);;
+                point.y += offset_vector_[j].y + 0.005*(kk-kk_center);
+                point.z += offset_vector_[j].z; ///
+                ptr_pcl_pointcloud_out->at(k++) = point;
+              }
             }
           }
         }
@@ -230,6 +238,7 @@ class PointCloudAugmentorNode : public rclcpp::Node
     double pitch_;
     bool no_push_back_;
     bool clear_points_;
+    uint32_t horizontal_multiplier_;
 
     rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr param_cb_;
 
