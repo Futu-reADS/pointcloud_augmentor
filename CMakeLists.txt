@@ -16,7 +16,6 @@ find_package(sensor_msgs REQUIRED)
 find_package(pcl_ros REQUIRED)
 find_package(pcl_conversions REQUIRED)
 #find_package(PCL 1.12 REQUIRED)
-
 add_executable(pointcloud_augmentor_node src/pointcloud_augmentor_node.cpp)
 target_include_directories(pointcloud_augmentor_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -28,6 +27,8 @@ ament_target_dependencies(pointcloud_augmentor_node
   rclcpp
   sensor_msgs
   pcl_ros)
+
+include_directories( include ${PCL_INCLUDE_DIRS} )
 
 install(TARGETS pointcloud_augmentor_node
   DESTINATION lib/${PROJECT_NAME})
@@ -49,5 +50,4 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
-
 ament_package()
