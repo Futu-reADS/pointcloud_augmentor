@@ -37,7 +37,7 @@ See `config/params.yaml` as an example.
 - `pitch`: Pitch of copying operation (unit: m)
 - `offset`: Offset from which copying operation starts (unit: m)
 - `length`: Length up to which copying operation will be done (unit: m)
-- `horizontal_multiplier`: augment to the horizontal direction also; T-shaped augmentation (both x-axis and y-axis agumentation) when `proportional_augmentor` is `false`
+- `horizontal_multiplier`: augment to the horizontal direction also; T-shaped augmentation (both x-axis and y-axis agumentation) when `proportional_augmentor` is `false` which seems to helpautoware perception module to detect objects 
 - `proportional_augmentor`: make augmentation pitches (both vertical and horizontal) proportional to distance from the center of lidar
 - `center`: Center point of LiDAR
 - `horizontal_angular_pitch`: Horizontal augmentation pitch [radian]
