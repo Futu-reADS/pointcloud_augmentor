@@ -6,5 +6,16 @@
       z:  1.0
     length: 0.5
     offset: 0.0
-    pitch:  0.1
+    pitch:  0.01
     no_push_back: true
+    x_pitch: 0.08
+    y_pitch: 0.08
+    horizontal_multiplier: 8
+    proportional_augmentation: false
+    horizontal_angular_pitch: 0.0031416
+    vertical_angular_pitch: 0.0349
+    center:
+      x:  1.255
+      y: -0.14
+      z:  0.23
+
