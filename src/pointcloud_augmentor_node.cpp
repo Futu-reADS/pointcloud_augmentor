@@ -36,6 +36,9 @@ class PointCloudAugmentorNode : public rclcpp::Node
       no_push_back_ = declare_parameter<bool>("no_push_back", true);
       clear_points_ = declare_parameter("clear_points", clear_points_);
 
+      x_pitch_  = declare_parameter<double>("x_pitch", 0.04);
+      y_pitch_  = declare_parameter<double>("y_pitch", 0.04);
+
       horizontal_multiplier_ = declare_parameter<int>("horizontal_multiplier", 32);
 
       proportional_augmentation_ = declare_parameter<bool>("proportional_augmentation", false);
@@ -46,6 +49,8 @@ class PointCloudAugmentorNode : public rclcpp::Node
       vertical_angle_pitch_ = declare_parameter<double>("vertical_angle_pitch", 0.0349);
 
       printf("direction_z:%lf length:%lf pitch:%lf offset:%lf\n", direction_z_, length_, pitch_, offset_);
+
+      
 
       update_offset_vector();
       rmw_qos_profile_t qos_profile = rmw_qos_profile_sensor_data;
@@ -100,21 +105,47 @@ class PointCloudAugmentorNode : public rclcpp::Node
               y_start = -dy*horizontal_multiplier_/2;
               z_start = 0;
               vertical_augment_number = (length_+dz)/dz;
+
+              for (size_t kk=0; kk < horizontal_multiplier_; kk++) {
+                for (size_t j=0; j < vertical_augment_number; j++) {
+                  point = ptr_pcl_pointcloud->at(i);
+                  point.x += x_start + dx*kk;
+                  point.y += y_start + dy*kk;
+                  point.z += z_start + dz*j;
+                  ptr_pcl_pointcloud_out->at(k++) = point;
+                }
+              }
+
             } else {
-              dx = 0.005;
-              dy = 0.005;
+              dx = x_pitch_;
+              dy = 0.00; //0.005
               dz = pitch_;
               x_start = 0;
-              y_start = -dy*horizontal_multiplier_/2;
+              //y_start = -dy*horizontal_multiplier_/2;
               z_start = 0;
-            }
-            for (size_t kk=0; kk < horizontal_multiplier_; kk++) {
-              for (size_t j=0; j < vertical_augment_number; j++) {
-                point = ptr_pcl_pointcloud->at(i);
-                point.x += x_start + dx*kk;
-                point.y += y_start + dy*kk;
-                point.z += z_start + dz*j;
-                ptr_pcl_pointcloud_out->at(k++) = point;
+
+              size_t kk, kk_base;
+              for (kk=0; kk < horizontal_multiplier_/2; kk++) {
+                for (size_t j=0; j < vertical_augment_number; j++) {
+                  point = ptr_pcl_pointcloud->at(i);
+                  point.x += x_start + dx*kk;
+                  point.y += 0 + dy*kk;
+                  point.z += z_start + dz*j;
+                  ptr_pcl_pointcloud_out->at(k++) = point;
+                }
+              }
+              kk_base = kk;
+              dx = 0.00;
+              dy = y_pitch_; //0.005
+              y_start = -dy*horizontal_multiplier_/4;
+              for (; kk < horizontal_multiplier_; kk++) {
+                for (size_t j=0; j < vertical_augment_number; j++) {
+                  point = ptr_pcl_pointcloud->at(i);
+                  point.x += 0 + dx*kk;
+                  point.y += y_start + dy*(kk-kk_base);
+                  point.z += z_start + dz*j;
+                  ptr_pcl_pointcloud_out->at(k++) = point;
+                }
               }
             }
 #else
@@ -185,6 +216,12 @@ class PointCloudAugmentorNode : public rclcpp::Node
         else if (param.get_name() == "pitch") {
           pitch_ = param.get_value<double>();
         }
+        else if (param.get_name() == "x_pitch") {
+          x_pitch_ = param.get_value<double>();
+        }
+        else if (param.get_name() == "y_pitch") {
+          y_pitch_ = param.get_value<double>();
+        }
         else if (param.get_name() == "direction.x") {
           direction_x_ = param.get_value<double>();
         }
@@ -246,6 +283,9 @@ class PointCloudAugmentorNode : public rclcpp::Node
     bool no_push_back_;
     bool clear_points_;
     uint32_t horizontal_multiplier_;
+
+    double x_pitch_;
+    double y_pitch_;
 
     bool proportional_augmentation_;
     double center_x_, center_y_, center_z_;

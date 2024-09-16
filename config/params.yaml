@@ -4,12 +4,14 @@
       x:  0.0
       y:  0.0
       z:  1.0
-    length: 0.05
+    length: 0.5
     offset: 0.0
     pitch:  0.01
     no_push_back: true
-    horizontal_multiplier: 32
-    proportional_augmentation: true
+    x_pitch: 0.08
+    y_pitch: 0.08
+    horizontal_multiplier: 8
+    proportional_augmentation: false
     horizontal_angular_pitch: 0.0031416
     vertical_angular_pitch: 0.0349
     center:
