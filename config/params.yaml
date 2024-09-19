@@ -4,7 +4,7 @@
       x:  0.0
       y:  0.0
       z:  1.0
-    length: 0.5
+    length: 0.3
     offset: 0.0
     pitch:  0.01
     no_push_back: true
